@@ -5,10 +5,13 @@
   gather_facts: false
   
   tasks:
-    - name: Deploy IPAM application
-      kubernetes.core.k8s:
-        state: present
-        src: deploy.yml
+    - name: Deploy IPAM application using kubectl
+      shell: kubectl apply -f deploy.yml
+      register: kubectl_result
+
+    - name: Show deployment result
+      debug:
+        msg: "{{ kubectl_result.stdout }}"
 
     - name: Show access info
       debug:
