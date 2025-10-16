@@ -5,6 +5,15 @@
   gather_facts: false
   
   tasks:
+    - name: Create MariaDB data directory with correct permissions
+      ansible.builtin.file:
+        path: /opt/ipam-mariadb-data
+        state: directory
+        mode: '0755'
+        owner: 999
+        group: 999
+      become: yes
+
     - name: Deploy IPAM application using kubectl
       shell: kubectl apply -f deploy.yml
       register: kubectl_result
@@ -12,6 +21,22 @@
     - name: Show deployment result
       debug:
         msg: "{{ kubectl_result.stdout }}"
+
+    - name: Wait for MariaDB to be ready
+      shell: kubectl wait --for=condition=ready pod -l app=mariadb -n ipam --timeout=300s
+      register: mariadb_wait
+      failed_when: false
+
+    - name: Wait for phpIPAM to be ready
+      shell: kubectl wait --for=condition=ready pod -l app=phpipam -n ipam --timeout=300s
+      register: phpipam_wait
+      failed_when: false
+
+    - name: Show deployment status
+      debug:
+        msg:
+          - "MariaDB status: {{ 'Ready' if mariadb_wait.rc == 0 else 'Still starting' }}"
+          - "phpIPAM status: {{ 'Ready' if phpipam_wait.rc == 0 else 'Still starting' }}"
 
     - name: Show access info
       debug:

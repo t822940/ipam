@@ -17,6 +17,26 @@ stringData:
   MARIADB_DATABASE: "phpipam"
 ---
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ipam-mariadb-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /opt/ipam-mariadb-data
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: Exists
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mariadb-data
@@ -26,6 +46,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
+  storageClassName: local-storage
 ---
 apiVersion: apps/v1
 kind: StatefulSet
